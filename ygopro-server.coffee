@@ -969,7 +969,7 @@ CLIENT_heartbeat_unregister = global.CLIENT_heartbeat_unregister = (client) ->
   return true
 
 CLIENT_heartbeat_register = global.CLIENT_heartbeat_register = (client, send) ->
-  if !settings.modules.heartbeat_detection.enabled or client.closed or client.is_post_watcher or client.pre_reconnecting or client.reconnecting or client.waiting_for_last or client.pos > 3 or client.heartbeat_protected
+  if !settings.modules.heartbeat_detection.enabled or client.closed or client.is_post_watcher or client.pre_reconnecting or client.reconnecting or client.waiting_for_last or client.pos > 5 or client.heartbeat_protected
     return false
   if client.heartbeat_timeout
     CLIENT_heartbeat_unregister(client)
@@ -1240,7 +1240,7 @@ class Room
   get_playing_player: ->
     playing_player = []
     _.each @players, (player)->
-      if player.pos < 4 then playing_player.push player
+      if player.pos < 6 then playing_player.push player
       return
     return playing_player
 
@@ -1408,7 +1408,7 @@ class Room
         @arena_score_handled = true
       index = _.indexOf(@players, client)
       @players.splice(index, 1) unless index == -1
-      if @duel_stage != ygopro.constants.DUEL_STAGE.BEGIN and @disconnector != 'server' and client.pos < 4
+      if @duel_stage != ygopro.constants.DUEL_STAGE.BEGIN and @disconnector != 'server' and client.pos < 6
         @finished = true
         if !@finished_by_death
           @scores[client.name_vpass] = -9
@@ -2413,7 +2413,7 @@ ygopro.stoc_follow 'HS_PLAYER_ENTER', true, (buffer, info, client, server, datas
   room=ROOM_all[client.rid]
   return false unless room and settings.modules.hide_name and room.duel_stage == ygopro.constants.DUEL_STAGE.BEGIN
   pos = info.pos
-  if pos < 4 and pos != client.pos
+  if pos < 6 and pos != client.pos
     struct = ygopro.structs["STOC_HS_PlayerEnter"]
     struct._setBuff(buffer)
     struct.set("name", "********")
@@ -2473,7 +2473,7 @@ ygopro.stoc_follow 'DUEL_END', false, (buffer, info, client, server, datas)->
   CLIENT_send_replays(client, room)
   if !room.replays_sent_to_watchers
     room.replays_sent_to_watchers = true
-    for player in room.players when player and player.pos > 3
+    for player in room.players when player and player.pos > 5
       CLIENT_send_replays(player, room)
     for player in room.watchers when player
       CLIENT_send_replays(player, room)

@@ -1259,7 +1259,7 @@
   };
 
   CLIENT_heartbeat_register = global.CLIENT_heartbeat_register = function(client, send) {
-    if (!settings.modules.heartbeat_detection.enabled || client.closed || client.is_post_watcher || client.pre_reconnecting || client.reconnecting || client.waiting_for_last || client.pos > 3 || client.heartbeat_protected) {
+    if (!settings.modules.heartbeat_detection.enabled || client.closed || client.is_post_watcher || client.pre_reconnecting || client.reconnecting || client.waiting_for_last || client.pos > 5 || client.heartbeat_protected) {
       return false;
     }
     if (client.heartbeat_timeout) {
@@ -1603,7 +1603,7 @@
       var playing_player;
       playing_player = [];
       _.each(this.players, function(player) {
-        if (player.pos < 4) {
+        if (player.pos < 6) {
           playing_player.push(player);
         }
       });
@@ -1834,7 +1834,7 @@
         if (index !== -1) {
           this.players.splice(index, 1);
         }
-        if (this.duel_stage !== ygopro.constants.DUEL_STAGE.BEGIN && this.disconnector !== 'server' && client.pos < 4) {
+        if (this.duel_stage !== ygopro.constants.DUEL_STAGE.BEGIN && this.disconnector !== 'server' && client.pos < 6) {
           this.finished = true;
           if (!this.finished_by_death) {
             this.scores[client.name_vpass] = -9;
@@ -3023,7 +3023,7 @@
       return false;
     }
     pos = info.pos;
-    if (pos < 4 && pos !== client.pos) {
+    if (pos < 6 && pos !== client.pos) {
       struct = ygopro.structs["STOC_HS_PlayerEnter"];
       struct._setBuff(buffer);
       struct.set("name", "********");
@@ -3115,7 +3115,7 @@
       ref2 = room.players;
       for (m = 0, len2 = ref2.length; m < len2; m++) {
         player = ref2[m];
-        if (player && player.pos > 3) {
+        if (player && player.pos > 5) {
           CLIENT_send_replays(player, room);
         }
       }
