@@ -1538,7 +1538,7 @@ net.createServer (client) ->
     return
 
   server.on 'close', (had_error) ->
-    #log.info "server closed", server.client.name, had_error
+    log.info "server closed", server.client.name, had_error
     room=ROOM_all[server.client.rid]
     #log.info "server close", server.client.ip, ROOM_connected_ip[server.client.ip]
     room.disconnector = 'server' if room

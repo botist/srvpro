@@ -1994,6 +1994,7 @@
     });
     server.on('close', function(had_error) {
       var room;
+      log.info("server closed", server.client.name, had_error);
       room = ROOM_all[server.client.rid];
       if (room) {
         room.disconnector = 'server';
