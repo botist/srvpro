@@ -2398,16 +2398,16 @@ ygopro.ctos_follow 'HS_KICK', true, (buffer, info, client, server, datas)->
       ygopro.stoc_send_chat_to_room(room, "#{player.name} ${kicked_by_player}", ygopro.constants.COLORS.RED)
   return false
 
-# ygopro.stoc_follow 'TYPE_CHANGE', true, (buffer, info, client, server, datas)->
-  # selftype = info.type & 0xf
-  # is_host = ((info.type >> 4) & 0xf) != 0
+ygopro.stoc_follow 'TYPE_CHANGE', true, (buffer, info, client, server, datas)->
+  selftype = info.type & 0xf
+  is_host = ((info.type >> 4) & 0xf) != 0
   # if room and room.hostinfo.no_watch and selftype == 7
     # ygopro.stoc_die(client, "${watch_denied_room}")
     # return true
-  # client.is_host = is_host
-  # client.pos = selftype
+  client.is_host = is_host
+  client.pos = selftype
   # console.log "TYPE_CHANGE to #{client.name}:", info, selftype, is_host
-  # return false
+  return false
 
 # ygopro.stoc_follow 'HS_PLAYER_ENTER', true, (buffer, info, client, server, datas)->
   # room=ROOM_all[client.rid]

@@ -2743,6 +2743,15 @@
     return false;
   });
 
+  ygopro.stoc_follow('TYPE_CHANGE', true, function(buffer, info, client, server, datas) {
+    var is_host, selftype;
+    selftype = info.type & 0xf;
+    is_host = ((info.type >> 4) & 0xf) !== 0;
+    client.is_host = is_host;
+    client.pos = selftype;
+    return false;
+  });
+
   ygopro.stoc_follow('DUEL_END', false, function(buffer, info, client, server, datas) {
     var len2, len3, m, n, player, ref2, ref3, results, room;
     room = ROOM_all[client.rid];
