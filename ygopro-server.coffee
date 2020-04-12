@@ -813,7 +813,7 @@ CLIENT_is_player = global.CLIENT_is_player = (client, room) ->
     if client == player
       is_player = true
       break
-  return is_player and client.pos <= 3
+  return is_player and client.pos <= 5
 
 CLIENT_is_able_to_reconnect = global.CLIENT_is_able_to_reconnect = (client, deckbuf) ->
   unless settings.modules.reconnect.enabled
@@ -1416,7 +1416,7 @@ class Room
             ROOM_ban_player(client.name, client.ip, "${random_ban_reason_flee}")
             if settings.modules.random_duel.record_match_scores and @random_type == 'M'
               ROOM_player_flee(client.name_vpass)
-      if @players.length and !(@windbot and client.is_host) and !(@arena and @duel_stage == ygopro.constants.DUEL_STAGE.BEGIN and client.pos <= 3)
+      if @players.length and !(@windbot and client.is_host) and !(@arena and @duel_stage == ygopro.constants.DUEL_STAGE.BEGIN and client.pos <= 5)
         left_name = (if settings.modules.hide_name and @duel_stage == ygopro.constants.DUEL_STAGE.BEGIN then "********" else client.name)
         # ygopro.stoc_send_chat_to_room this, "#{left_name} ${left_game}" + if error then ": #{error}" else ''
         roomlist.update(this) if !@windbot and @duel_stage == ygopro.constants.DUEL_STAGE.BEGIN and settings.modules.http.websocket_roomlist
@@ -1490,6 +1490,8 @@ net.createServer (client) ->
 
   # server stand for the connection to ygopro server process
   server = new net.Socket()
+  server.setKeepAlive(true,30000);
+  client.setKeepAlive(true,30000);
   client.server = server
   server.client = client
 

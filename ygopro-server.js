@@ -1064,7 +1064,7 @@
         break;
       }
     }
-    return is_player && client.pos <= 3;
+    return is_player && client.pos <= 5;
   };
 
   CLIENT_is_able_to_reconnect = global.CLIENT_is_able_to_reconnect = function(client, deckbuf) {
@@ -1846,7 +1846,7 @@
             }
           }
         }
-        if (this.players.length && !(this.windbot && client.is_host) && !(this.arena && this.duel_stage === ygopro.constants.DUEL_STAGE.BEGIN && client.pos <= 3)) {
+        if (this.players.length && !(this.windbot && client.is_host) && !(this.arena && this.duel_stage === ygopro.constants.DUEL_STAGE.BEGIN && client.pos <= 5)) {
           left_name = (settings.modules.hide_name && this.duel_stage === ygopro.constants.DUEL_STAGE.BEGIN ? "********" : client.name);
           if (!this.windbot && this.duel_stage === ygopro.constants.DUEL_STAGE.BEGIN && settings.modules.http.websocket_roomlist) {
             roomlist.update(this);
@@ -1943,6 +1943,8 @@
     }
     ROOM_connected_ip[client.ip] = connect_count;
     server = new net.Socket();
+    server.setKeepAlive(true, 30000);
+    client.setKeepAlive(true, 30000);
     client.server = server;
     server.client = client;
     client.setTimeout(2000);
