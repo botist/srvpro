@@ -8,7 +8,6 @@ config.*.json
 config.user.bak
 
 /bak
-/config
 /ygopro
 /windbot
 /decks
@@ -42,4 +41,5 @@ Dockerfile*
 /docs
 /README.md
 /*.coffee
+!/ygopro-server.coffee
 /LICENSE
