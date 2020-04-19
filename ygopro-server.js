@@ -1802,7 +1802,6 @@
         return;
       }
       if (client.is_post_watcher) {
-        ygopro.stoc_send_chat_to_room(this, (client.name + " ${quit_watch}") + (error ? ": " + error : ''));
         index = _.indexOf(this.watchers, client);
         if (index !== -1) {
           this.watchers.splice(index, 1);
@@ -2449,7 +2448,6 @@
           client.setTimeout(300000);
           client.rid = _.indexOf(ROOM_all, room);
           client.is_post_watcher = true;
-          ygopro.stoc_send_chat_to_room(room, client.name + " ${watch_join}");
           room.watchers.push(client);
           ygopro.stoc_send_chat(client, "${watch_watching}", ygopro.constants.COLORS.BABYBLUE);
           ygopro.stoc_send(client, 'CATCHUP', {

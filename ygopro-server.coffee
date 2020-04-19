@@ -1390,7 +1390,7 @@ class Room
     if client.had_new_reconnection
       return
     if client.is_post_watcher
-      ygopro.stoc_send_chat_to_room this, "#{client.name} ${quit_watch}" + if error then ": #{error}" else ''
+      # ygopro.stoc_send_chat_to_room this, "#{client.name} ${quit_watch}" + if error then ": #{error}" else ''
       index = _.indexOf(@watchers, client)
       @watchers.splice(index, 1) unless index == -1
       #client.room = null
@@ -1963,7 +1963,7 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server, datas)->
         client.setTimeout(300000) #连接后超时5分钟
         client.rid = _.indexOf(ROOM_all, room)
         client.is_post_watcher = true
-        ygopro.stoc_send_chat_to_room(room, "#{client.name} ${watch_join}")
+        # ygopro.stoc_send_chat_to_room(room, "#{client.name} ${watch_join}")
         room.watchers.push client
         ygopro.stoc_send_chat(client, "${watch_watching}", ygopro.constants.COLORS.BABYBLUE)
         # room.connect(client)
