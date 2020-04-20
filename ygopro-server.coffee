@@ -11,6 +11,7 @@ execFile = require('child_process').execFile
 spawn = require('child_process').spawn
 spawnSync = require('child_process').spawnSync
 rmdir = require 'rimraf'
+wtf8 = require 'wtf-8'
 
 # dummy class to be overwritten if bot token is provided
 botServer = {
@@ -3237,8 +3238,8 @@ if settings.modules.http
         response.writeHead(200)
         roomsjson = JSON.stringify rooms: (for room in ROOM_all when room and room.established
           roomid: room.game_id,
-          roomname: room.name,
-          roomnotes: room.notes,
+          roomname: wtf8.encode(room.name),
+          roomnotes: wtf8.encode(room.notes),
           roommode: room.hostinfo.mode,
           needpass: !!room.pass,
           team1: room.hostinfo.team1,
@@ -3257,7 +3258,7 @@ if settings.modules.http
           banlist_hash: room.hostinfo.lflist,
           users: _.sortBy((for player in room.players when player.pos?
             id: (-1).toString(),
-            name: player.name,
+            name: wtf8.encode(player.name),
             ip: if settings.modules.http.show_ip and pass_validated and !player.is_local then player.ip.slice(7) else null,
             status: if settings.modules.http.show_info and room.duel_stage != ygopro.constants.DUEL_STAGE.BEGIN and player.pos != 7 then (
               score: room.scores[player.name_vpass],
