@@ -12,7 +12,7 @@ RUN apt update && \
 # srvpro
 COPY . /srvpro
 WORKDIR /srvpro
-RUN npm ci
+RUN npm i
 RUN mkdir decks replays logs /redis
 #RUN coffee -c ./ygopro-server.coffee
 
