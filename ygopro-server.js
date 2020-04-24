@@ -2268,47 +2268,47 @@
       }
     });
     // 服务端到客户端(stoc)
-    server.on('data', function(stoc_buffer) {
-      var b, buffer, cancel, datas, info, len2, len3, len4, looplimit, m, n, o, ref2, ref3, result, stoc_event, stoc_message_length, stoc_proto, struct;
-      //stoc_buffer = Buffer.alloc(0)
-      stoc_message_length = 0;
-      stoc_proto = 0;
-      //stoc_buffer = Buffer.concat([stoc_buffer, data], stoc_buffer.length + data.length) #buffer的错误使用方式，好孩子不要学
-
-      //unless ygopro.stoc_follows[stoc_proto] and ygopro.stoc_follows[stoc_proto].synchronous
+    server.cached_buffer = Buffer.alloc(0);
+    server.stoc_message_length = 0;
+    server.stoc_proto = 0;
+    server.on('data', function(data) {
+      var b, buffer, cancel, datas, info, len2, len3, len4, m, n, o, ref2, ref3, result, stoc_event, struct;
+      server.cached_buffer = Buffer.concat([server.cached_buffer, data], server.cached_buffer.length + data.length); //buffer的错误使用方式，好孩子不要学
+      
+      //unless ygopro.stoc_follows[server.stoc_proto] and ygopro.stoc_follows[server.stoc_proto].synchronous
       //server.client.write data
       datas = [];
-      looplimit = 0;
+      // looplimit = 0
       while (true) {
-        if (stoc_message_length === 0) {
-          if (stoc_buffer.length >= 2) {
-            stoc_message_length = stoc_buffer.readUInt16LE(0);
+        if (server.stoc_message_length === 0) {
+          if (server.cached_buffer.length >= 2) {
+            server.stoc_message_length = server.cached_buffer.readUInt16LE(0);
           } else {
-            if (stoc_buffer.length !== 0) {
-              log.warn("bad stoc_buffer length", server.client.ip);
+            if (server.cached_buffer.length !== 0) {
+              log.warn("bad server.cached_buffer length", server.client.ip);
             }
             break;
           }
-        } else if (stoc_proto === 0) {
-          if (stoc_buffer.length >= 3) {
-            stoc_proto = stoc_buffer.readUInt8(2);
+        } else if (server.stoc_proto === 0) {
+          if (server.cached_buffer.length >= 3) {
+            server.stoc_proto = server.cached_buffer.readUInt8(2);
           } else {
-            log.warn("bad stoc_proto length", server.client.ip);
+            log.warn("bad server.stoc_proto length", server.client.ip);
             break;
           }
         } else {
-          if (stoc_buffer.length >= 2 + stoc_message_length) {
-            //console.log "STOC", ygopro.constants.STOC[stoc_proto]
+          if (server.cached_buffer.length >= 2 + server.stoc_message_length) {
+            //console.log "STOC", ygopro.constants.STOC[server.stoc_proto]
             cancel = false;
-            b = stoc_buffer.slice(3, stoc_message_length - 1 + 3);
+            b = server.cached_buffer.slice(3, server.stoc_message_length - 1 + 3);
             info = null;
-            struct = ygopro.structs[ygopro.proto_structs.STOC[ygopro.constants.STOC[stoc_proto]]];
+            struct = ygopro.structs[ygopro.proto_structs.STOC[ygopro.constants.STOC[server.stoc_proto]]];
             if (struct && !cancel) {
               struct._setBuff(b);
               info = _.clone(struct.fields);
             }
-            if (ygopro.stoc_follows_before[stoc_proto] && !cancel) {
-              ref2 = ygopro.stoc_follows_before[stoc_proto];
+            if (ygopro.stoc_follows_before[server.stoc_proto] && !cancel) {
+              ref2 = ygopro.stoc_follows_before[server.stoc_proto];
               for (m = 0, len2 = ref2.length; m < len2; m++) {
                 stoc_event = ref2[m];
                 result = stoc_event.callback(b, info, server.client, server, datas);
@@ -2321,9 +2321,9 @@
               struct._setBuff(b);
               info = _.clone(struct.fields);
             }
-            if (ygopro.stoc_follows[stoc_proto] && !cancel) {
-              result = ygopro.stoc_follows[stoc_proto].callback(b, info, server.client, server, datas);
-              if (result && ygopro.stoc_follows[stoc_proto].synchronous) {
+            if (ygopro.stoc_follows[server.stoc_proto] && !cancel) {
+              result = ygopro.stoc_follows[server.stoc_proto].callback(b, info, server.client, server, datas);
+              if (result && ygopro.stoc_follows[server.stoc_proto].synchronous) {
                 cancel = true;
               }
             }
@@ -2331,8 +2331,8 @@
               struct._setBuff(b);
               info = _.clone(struct.fields);
             }
-            if (ygopro.stoc_follows_after[stoc_proto] && !cancel) {
-              ref3 = ygopro.stoc_follows_after[stoc_proto];
+            if (ygopro.stoc_follows_after[server.stoc_proto] && !cancel) {
+              ref3 = ygopro.stoc_follows_after[server.stoc_proto];
               for (n = 0, len3 = ref3.length; n < len3; n++) {
                 stoc_event = ref3[n];
                 result = stoc_event.callback(b, info, server.client, server, datas);
@@ -2342,24 +2342,23 @@
               }
             }
             if (!cancel) {
-              datas.push(stoc_buffer.slice(0, 2 + stoc_message_length));
+              datas.push(server.cached_buffer.slice(0, 2 + server.stoc_message_length));
             }
-            stoc_buffer = stoc_buffer.slice(2 + stoc_message_length);
-            stoc_message_length = 0;
-            stoc_proto = 0;
+            server.cached_buffer = server.cached_buffer.slice(2 + server.stoc_message_length);
+            server.stoc_message_length = 0;
+            server.stoc_proto = 0;
           } else {
             log.warn("bad stoc_message length", server.client.ip);
             break;
           }
         }
-        looplimit++;
-        //log.info(looplimit)
-        if (looplimit > 800) {
-          log.info("error stoc", server.client.name);
-          server.destroy();
-          break;
-        }
       }
+      // looplimit++
+      //log.info(looplimit)
+      // if looplimit > 800
+      // log.info("error stoc", server.client.name)
+      // server.destroy()
+      // break
       if (server.client && !server.client.closed) {
         for (o = 0, len4 = datas.length; o < len4; o++) {
           buffer = datas[o];

@@ -1690,75 +1690,75 @@ net.createServer (client) ->
     return
 
   # 服务端到客户端(stoc)
-  server.on 'data', (stoc_buffer)->
-    #stoc_buffer = Buffer.alloc(0)
-    stoc_message_length = 0
-    stoc_proto = 0
-    #stoc_buffer = Buffer.concat([stoc_buffer, data], stoc_buffer.length + data.length) #buffer的错误使用方式，好孩子不要学
+  server.cached_buffer=Buffer.alloc(0)
+  server.stoc_message_length=0
+  server.stoc_proto=0
+  server.on 'data', (data)->
+    server.cached_buffer = Buffer.concat([server.cached_buffer, data], server.cached_buffer.length + data.length) #buffer的错误使用方式，好孩子不要学
 
-    #unless ygopro.stoc_follows[stoc_proto] and ygopro.stoc_follows[stoc_proto].synchronous
+    #unless ygopro.stoc_follows[server.stoc_proto] and ygopro.stoc_follows[server.stoc_proto].synchronous
     #server.client.write data
     datas = []
 
-    looplimit = 0
+    # looplimit = 0
 
     while true
-      if stoc_message_length == 0
-        if stoc_buffer.length >= 2
-          stoc_message_length = stoc_buffer.readUInt16LE(0)
+      if server.stoc_message_length == 0
+        if server.cached_buffer.length >= 2
+          server.stoc_message_length = server.cached_buffer.readUInt16LE(0)
         else
-          log.warn("bad stoc_buffer length", server.client.ip) unless stoc_buffer.length == 0
+          log.warn("bad server.cached_buffer length", server.client.ip) unless server.cached_buffer.length == 0
           break
-      else if stoc_proto == 0
-        if stoc_buffer.length >= 3
-          stoc_proto = stoc_buffer.readUInt8(2)
+      else if server.stoc_proto == 0
+        if server.cached_buffer.length >= 3
+          server.stoc_proto = server.cached_buffer.readUInt8(2)
         else
-          log.warn("bad stoc_proto length", server.client.ip)
+          log.warn("bad server.stoc_proto length", server.client.ip)
           break
       else
-        if stoc_buffer.length >= 2 + stoc_message_length
-          #console.log "STOC", ygopro.constants.STOC[stoc_proto]
+        if server.cached_buffer.length >= 2 + server.stoc_message_length
+          #console.log "STOC", ygopro.constants.STOC[server.stoc_proto]
           cancel = false
-          b = stoc_buffer.slice(3, stoc_message_length - 1 + 3)
+          b = server.cached_buffer.slice(3, server.stoc_message_length - 1 + 3)
           info = null
-          struct = ygopro.structs[ygopro.proto_structs.STOC[ygopro.constants.STOC[stoc_proto]]]
+          struct = ygopro.structs[ygopro.proto_structs.STOC[ygopro.constants.STOC[server.stoc_proto]]]
           if struct and !cancel
             struct._setBuff(b)
             info = _.clone(struct.fields)
-          if ygopro.stoc_follows_before[stoc_proto] and !cancel
-            for stoc_event in ygopro.stoc_follows_before[stoc_proto]
+          if ygopro.stoc_follows_before[server.stoc_proto] and !cancel
+            for stoc_event in ygopro.stoc_follows_before[server.stoc_proto]
               result = stoc_event.callback b, info, server.client, server, datas
               if result and stoc_event.synchronous
                 cancel = true
           if struct and !cancel
             struct._setBuff(b)
             info = _.clone(struct.fields)
-          if ygopro.stoc_follows[stoc_proto] and !cancel
-            result = ygopro.stoc_follows[stoc_proto].callback b, info, server.client, server, datas
-            if result and ygopro.stoc_follows[stoc_proto].synchronous
+          if ygopro.stoc_follows[server.stoc_proto] and !cancel
+            result = ygopro.stoc_follows[server.stoc_proto].callback b, info, server.client, server, datas
+            if result and ygopro.stoc_follows[server.stoc_proto].synchronous
               cancel = true
           if struct and !cancel
             struct._setBuff(b)
             info = _.clone(struct.fields)
-          if ygopro.stoc_follows_after[stoc_proto] and !cancel
-            for stoc_event in ygopro.stoc_follows_after[stoc_proto]
+          if ygopro.stoc_follows_after[server.stoc_proto] and !cancel
+            for stoc_event in ygopro.stoc_follows_after[server.stoc_proto]
               result = stoc_event.callback b, info, server.client, server, datas
               if result and stoc_event.synchronous
                 cancel = true
-          datas.push stoc_buffer.slice(0, 2 + stoc_message_length) unless cancel
-          stoc_buffer = stoc_buffer.slice(2 + stoc_message_length)
-          stoc_message_length = 0
-          stoc_proto = 0
+          datas.push server.cached_buffer.slice(0, 2 + server.stoc_message_length) unless cancel
+          server.cached_buffer = server.cached_buffer.slice(2 + server.stoc_message_length)
+          server.stoc_message_length = 0
+          server.stoc_proto = 0
         else
           log.warn("bad stoc_message length", server.client.ip)
           break
 
-      looplimit++
+      # looplimit++
       #log.info(looplimit)
-      if looplimit > 800
-        log.info("error stoc", server.client.name)
-        server.destroy()
-        break
+      # if looplimit > 800
+        # log.info("error stoc", server.client.name)
+        # server.destroy()
+        # break
     if server.client and !server.client.closed
       server.client.write buffer for buffer in datas
 
