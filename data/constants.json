@@ -53,7 +53,7 @@
         "32": "HS_PLAYER_ENTER",
         "33": "HS_PLAYER_CHANGE",
         "34": "HS_WATCH_CHANGE",
-        "48": "FIELD_FINISH",
+        "48": "STOC_NEW_REPLAY",
         "240": "CATCHUP"
     },
     "PLAYERCHANGE":{
