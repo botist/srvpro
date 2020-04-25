@@ -1043,8 +1043,8 @@ class Room
     @status = 'starting'
     #@started = false
     @established = false
-    @watcher_buffers = []
-    @recorder_buffers = []
+    # @watcher_buffers = []
+    # @recorder_buffers = []
     @cloud_replay_id = Math.floor(Math.random()*100000000)
     @watchers = []
     @random_type = ''
@@ -1223,10 +1223,10 @@ class Room
         if log_rep_id
           log.info "error replay: R#" + replay_id
         return
-    @watcher_buffers = []
-    @recorder_buffers = []
+    # @watcher_buffers = []
+    # @recorder_buffers = []
     @players = []
-    @watcher.destroy() if @watcher
+    # @watcher.destroy() if @watcher
     @recorder.destroy() if @recorder
     @deleted = true
     index = _.indexOf(ROOM_all, this)
@@ -1959,27 +1959,27 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server, datas)->
       ygopro.stoc_die(client, "${room_not_found}")
     else if room.error
       ygopro.stoc_die(client, room.error)
-    else if room.duel_stage != ygopro.constants.DUEL_STAGE.BEGIN
-      if settings.modules.cloud_replay.enable_halfway_watch and !room.hostinfo.no_watch
-        client.setTimeout(300000) #连接后超时5分钟
-        client.rid = _.indexOf(ROOM_all, room)
-        client.is_post_watcher = true
+    # else if room.duel_stage != ygopro.constants.DUEL_STAGE.BEGIN
+      # if settings.modules.cloud_replay.enable_halfway_watch and !room.hostinfo.no_watch
+        # client.setTimeout(300000) #连接后超时5分钟
+        # client.rid = _.indexOf(ROOM_all, room)
+        # client.is_post_watcher = true
         # ygopro.stoc_send_chat_to_room(room, "#{client.name} ${watch_join}")
-        room.watchers.push client
-        ygopro.stoc_send_chat(client, "${watch_watching}", ygopro.constants.COLORS.BABYBLUE)
+        # room.watchers.push client
+        # ygopro.stoc_send_chat(client, "${watch_watching}", ygopro.constants.COLORS.BABYBLUE)
         # room.connect(client)
-        ygopro.stoc_send(client, 'CATCHUP', {
-              val: 1
-            })
-        for buffer in room.watcher_buffers
-            client.write buffer
-        ygopro.stoc_send(client, 'CATCHUP', {
-              val: 0
-            })
-      else
-        ygopro.stoc_die(client, "${watch_denied}")
-    else if room.hostinfo.no_watch and room.players.length >= (if room.hostinfo.mode == 2 then 4 else 2)
-      ygopro.stoc_die(client, "${watch_denied_room}")
+        # ygopro.stoc_send(client, 'CATCHUP', {
+              # val: 1
+            # })
+        # for buffer in room.watcher_buffers
+            # client.write buffer
+        # ygopro.stoc_send(client, 'CATCHUP', {
+              # val: 0
+            # })
+      # else
+        # ygopro.stoc_die(client, "${watch_denied}")
+    # else if room.hostinfo.no_watch and room.players.length >= (if room.hostinfo.mode == 2 then 4 else 2)
+      # ygopro.stoc_die(client, "${watch_denied_room}")
     else
       client.setTimeout(300000) #连接后超时5分钟
       client.rid = _.indexOf(ROOM_all, room)
@@ -2015,50 +2015,50 @@ ygopro.stoc_follow 'JOIN_GAME', false, (buffer, info, client, server, datas)->
     ygopro.stoc_send_chat_to_room(room, ROOM_player_get_score(client), ygopro.constants.COLORS.GREEN)
     for player in room.players when player.pos != 7 and player != client
       ygopro.stoc_send_chat(client, ROOM_player_get_score(player), ygopro.constants.COLORS.GREEN)
-  if !room.recorder
-    room.recorder = recorder = net.connect room.port, ->
-      ygopro.ctos_send recorder, 'PLAYER_INFO', {
-        name: "Marshtomp"
-      }
-      ygopro.ctos_send recorder, 'JOIN_GAME', {
-        version: settings.version,
-        pass: "Marshtomp"
-      }
-      ygopro.ctos_send recorder, 'HS_TOOBSERVER'
-      return
+  # if !room.recorder
+    # room.recorder = recorder = net.connect room.port, ->
+      # ygopro.ctos_send recorder, 'PLAYER_INFO', {
+        # name: "Marshtomp"
+      # }
+      # ygopro.ctos_send recorder, 'JOIN_GAME', {
+        # version: settings.version,
+        # pass: "Marshtomp"
+      # }
+      # ygopro.ctos_send recorder, 'HS_TOOBSERVER'
+      # return
 
-    recorder.on 'data', (data)->
-      room=ROOM_all[client.rid]
-      return unless room and settings.modules.cloud_replay.enabled
-      room.recorder_buffers.push data
-      return
+    # recorder.on 'data', (data)->
+      # room=ROOM_all[client.rid]
+      # return unless room and settings.modules.cloud_replay.enabled
+      # room.recorder_buffers.push data
+      # return
 
-    recorder.on 'error', (error)->
-      return
+    # recorder.on 'error', (error)->
+      # return
 
-  if settings.modules.cloud_replay.enable_halfway_watch and !room.watcher and !room.hostinfo.no_watch
-    room.watcher = watcher = if settings.modules.test_mode.watch_public_hand then room.recorder else net.connect room.port, ->
-      ygopro.ctos_send watcher, 'PLAYER_INFO', {
-        name: "the Big Brother"
-      }
-      ygopro.ctos_send watcher, 'JOIN_GAME', {
-        version2: settings.version,
-        pass: room.pass
-      }
-      ygopro.ctos_send watcher, 'HS_TOOBSERVER'
-      return
+  # if settings.modules.cloud_replay.enable_halfway_watch and !room.watcher and !room.hostinfo.no_watch
+    # room.watcher = watcher = if settings.modules.test_mode.watch_public_hand then room.recorder else net.connect room.port, ->
+      # ygopro.ctos_send watcher, 'PLAYER_INFO', {
+        # name: "the Big Brother"
+      # }
+      # ygopro.ctos_send watcher, 'JOIN_GAME', {
+        # version2: settings.version,
+        # pass: room.pass
+      # }
+      # ygopro.ctos_send watcher, 'HS_TOOBSERVER'
+      # return
 
-    watcher.on 'data', (data)->
-      room=ROOM_all[client.rid]
-      return unless room
-      room.watcher_buffers.push data
-      for w in room.watchers
-        w.write data if w #a WTF fix
-      return
+    # watcher.on 'data', (data)->
+      # room=ROOM_all[client.rid]
+      # return unless room
+      # room.watcher_buffers.push data
+      # for w in room.watchers
+        # w.write data if w #a WTF fix
+      # return
 
-    watcher.on 'error', (error)->
+    # watcher.on 'error', (error)->
 #log.error "watcher error", error
-      return
+      # return
   return
 
 # 登场台词
@@ -2080,22 +2080,22 @@ load_dialogues = global.load_dialogues = () ->
 if settings.modules.dialogues.get
   load_dialogues()
 
-ygopro.stoc_follow_after 'GAME_MSG', true, (buffer, info, client, server, datas)->
-  room=ROOM_all[client.rid]
-  return unless room and !client.reconnecting
-  msg = buffer.readInt8(0)
+# ygopro.stoc_follow_after 'GAME_MSG', true, (buffer, info, client, server, datas)->
+  # room=ROOM_all[client.rid]
+  # return unless room and !client.reconnecting
+  # msg = buffer.readInt8(0)
 
-  if ygopro.constants.MSG[msg] == 'SELECT_YESNO'
-    stringid = buffer.readUInt32LE(2)
-    if stringid == 1989
-      room.update_spectator_buffer()
-  return false
+  # if ygopro.constants.MSG[msg] == 'SELECT_YESNO'
+    # stringid = buffer.readUInt32LE(2)
+    # if stringid == 1989
+      # room.update_spectator_buffer()
+  # return false
 
-ygopro.stoc_follow_after 'CHANGE_SIDE', true, (buffer, info, client, server, datas)->
-  room=ROOM_all[client.rid]
-  return unless room
-  room.update_spectator_buffer()
-  return false
+# ygopro.stoc_follow_after 'CHANGE_SIDE', true, (buffer, info, client, server, datas)->
+  # room=ROOM_all[client.rid]
+  # return unless room
+  # room.update_spectator_buffer()
+  # return false
 
 ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server, datas)->
   room=ROOM_all[client.rid]

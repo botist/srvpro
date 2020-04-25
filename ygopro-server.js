@@ -1402,8 +1402,8 @@
       this.status = 'starting';
       //@started = false
       this.established = false;
-      this.watcher_buffers = [];
-      this.recorder_buffers = [];
+      // @watcher_buffers = []
+      // @recorder_buffers = []
       this.cloud_replay_id = Math.floor(Math.random() * 100000000);
       this.watchers = [];
       this.random_type = '';
@@ -1638,13 +1638,11 @@
           }
         });
       }
-      this.watcher_buffers = [];
-      this.recorder_buffers = [];
+      // @watcher_buffers = []
+      // @recorder_buffers = []
       this.players = [];
-      if (this.watcher) {
-        this.watcher.destroy();
-      }
       if (this.recorder) {
+        // @watcher.destroy() if @watcher
         this.recorder.destroy();
       }
       this.deleted = true;
@@ -2498,7 +2496,7 @@
   });
 
   ygopro.ctos_follow('JOIN_GAME', false, function(buffer, info, client, server, datas) {
-    var len2, m, name, ref2, room;
+    var name, room;
     //log.info info
     info.pass = info.pass.trim();
     client.pass = info.pass;
@@ -2559,32 +2557,28 @@
         ygopro.stoc_die(client, "${room_not_found}");
       } else if (room.error) {
         ygopro.stoc_die(client, room.error);
-      } else if (room.duel_stage !== ygopro.constants.DUEL_STAGE.BEGIN) {
-        if (settings.modules.cloud_replay.enable_halfway_watch && !room.hostinfo.no_watch) {
-          client.setTimeout(300000); //连接后超时5分钟
-          client.rid = _.indexOf(ROOM_all, room);
-          client.is_post_watcher = true;
-          // ygopro.stoc_send_chat_to_room(room, "#{client.name} ${watch_join}")
-          room.watchers.push(client);
-          ygopro.stoc_send_chat(client, "${watch_watching}", ygopro.constants.COLORS.BABYBLUE);
-          // room.connect(client)
-          ygopro.stoc_send(client, 'CATCHUP', {
-            val: 1
-          });
-          ref2 = room.watcher_buffers;
-          for (m = 0, len2 = ref2.length; m < len2; m++) {
-            buffer = ref2[m];
-            client.write(buffer);
-          }
-          ygopro.stoc_send(client, 'CATCHUP', {
-            val: 0
-          });
-        } else {
-          ygopro.stoc_die(client, "${watch_denied}");
-        }
-      } else if (room.hostinfo.no_watch && room.players.length >= (room.hostinfo.mode === 2 ? 4 : 2)) {
-        ygopro.stoc_die(client, "${watch_denied_room}");
       } else {
+        // else if room.duel_stage != ygopro.constants.DUEL_STAGE.BEGIN
+        // if settings.modules.cloud_replay.enable_halfway_watch and !room.hostinfo.no_watch
+        // client.setTimeout(300000) #连接后超时5分钟
+        // client.rid = _.indexOf(ROOM_all, room)
+        // client.is_post_watcher = true
+        // ygopro.stoc_send_chat_to_room(room, "#{client.name} ${watch_join}")
+        // room.watchers.push client
+        // ygopro.stoc_send_chat(client, "${watch_watching}", ygopro.constants.COLORS.BABYBLUE)
+        // room.connect(client)
+        // ygopro.stoc_send(client, 'CATCHUP', {
+        // val: 1
+        // })
+        // for buffer in room.watcher_buffers
+        // client.write buffer
+        // ygopro.stoc_send(client, 'CATCHUP', {
+        // val: 0
+        // })
+        // else
+        // ygopro.stoc_die(client, "${watch_denied}")
+        // else if room.hostinfo.no_watch and room.players.length >= (if room.hostinfo.mode == 2 then 4 else 2)
+        // ygopro.stoc_die(client, "${watch_denied_room}")
         client.setTimeout(300000); //连接后超时5分钟
         client.rid = _.indexOf(ROOM_all, room);
         room.connect(client);
@@ -2593,7 +2587,7 @@
   });
 
   ygopro.stoc_follow('JOIN_GAME', false, function(buffer, info, client, server, datas) {
-    var len2, m, player, recorder, ref2, room, watcher;
+    var len2, m, player, ref2, room;
     //欢迎信息
     room = ROOM_all[client.rid];
     if (!(room && !client.reconnecting)) {
@@ -2636,58 +2630,53 @@
         }
       }
     }
-    if (!room.recorder) {
-      room.recorder = recorder = net.connect(room.port, function() {
-        ygopro.ctos_send(recorder, 'PLAYER_INFO', {
-          name: "Marshtomp"
-        });
-        ygopro.ctos_send(recorder, 'JOIN_GAME', {
-          version: settings.version,
-          pass: "Marshtomp"
-        });
-        ygopro.ctos_send(recorder, 'HS_TOOBSERVER');
-      });
-      recorder.on('data', function(data) {
-        room = ROOM_all[client.rid];
-        if (!(room && settings.modules.cloud_replay.enabled)) {
-          return;
-        }
-        room.recorder_buffers.push(data);
-      });
-      recorder.on('error', function(error) {});
-    }
-    if (settings.modules.cloud_replay.enable_halfway_watch && !room.watcher && !room.hostinfo.no_watch) {
-      room.watcher = watcher = settings.modules.test_mode.watch_public_hand ? room.recorder : net.connect(room.port, function() {
-        ygopro.ctos_send(watcher, 'PLAYER_INFO', {
-          name: "the Big Brother"
-        });
-        ygopro.ctos_send(watcher, 'JOIN_GAME', {
-          version2: settings.version,
-          pass: room.pass
-        });
-        ygopro.ctos_send(watcher, 'HS_TOOBSERVER');
-      });
-      watcher.on('data', function(data) {
-        var len3, n, ref3, w;
-        room = ROOM_all[client.rid];
-        if (!room) {
-          return;
-        }
-        room.watcher_buffers.push(data);
-        ref3 = room.watchers;
-        for (n = 0, len3 = ref3.length; n < len3; n++) {
-          w = ref3[n];
-          if (w) { //a WTF fix
-            w.write(data);
-          }
-        }
-      });
-      watcher.on('error', function(error) {});
-    }
   });
 
   // 登场台词
+  // if !room.recorder
+  // room.recorder = recorder = net.connect room.port, ->
+  // ygopro.ctos_send recorder, 'PLAYER_INFO', {
+  // name: "Marshtomp"
+  // }
+  // ygopro.ctos_send recorder, 'JOIN_GAME', {
+  // version: settings.version,
+  // pass: "Marshtomp"
+  // }
+  // ygopro.ctos_send recorder, 'HS_TOOBSERVER'
+  // return
+
+  // recorder.on 'data', (data)->
+  // room=ROOM_all[client.rid]
+  // return unless room and settings.modules.cloud_replay.enabled
+  // room.recorder_buffers.push data
+  // return
+
+  // recorder.on 'error', (error)->
+  // return
+
+  // if settings.modules.cloud_replay.enable_halfway_watch and !room.watcher and !room.hostinfo.no_watch
+  // room.watcher = watcher = if settings.modules.test_mode.watch_public_hand then room.recorder else net.connect room.port, ->
+  // ygopro.ctos_send watcher, 'PLAYER_INFO', {
+  // name: "the Big Brother"
+  // }
+  // ygopro.ctos_send watcher, 'JOIN_GAME', {
+  // version2: settings.version,
+  // pass: room.pass
+  // }
+  // ygopro.ctos_send watcher, 'HS_TOOBSERVER'
+  // return
+
+  // watcher.on 'data', (data)->
+  // room=ROOM_all[client.rid]
+  // return unless room
+  // room.watcher_buffers.push data
+  // for w in room.watchers
+  // w.write data if w #a WTF fix
+  // return
+
+  // watcher.on 'error', (error)->
   //log.error "watcher error", error
+  // return
   load_dialogues = global.load_dialogues = function() {
     request({
       url: settings.modules.dialogues.get,
@@ -2708,32 +2697,22 @@
     load_dialogues();
   }
 
-  ygopro.stoc_follow_after('GAME_MSG', true, function(buffer, info, client, server, datas) {
-    var msg, room, stringid;
-    room = ROOM_all[client.rid];
-    if (!(room && !client.reconnecting)) {
-      return;
-    }
-    msg = buffer.readInt8(0);
-    if (ygopro.constants.MSG[msg] === 'SELECT_YESNO') {
-      stringid = buffer.readUInt32LE(2);
-      if (stringid === 1989) {
-        room.update_spectator_buffer();
-      }
-    }
-    return false;
-  });
+  // ygopro.stoc_follow_after 'GAME_MSG', true, (buffer, info, client, server, datas)->
+  // room=ROOM_all[client.rid]
+  // return unless room and !client.reconnecting
+  // msg = buffer.readInt8(0)
 
-  ygopro.stoc_follow_after('CHANGE_SIDE', true, function(buffer, info, client, server, datas) {
-    var room;
-    room = ROOM_all[client.rid];
-    if (!room) {
-      return;
-    }
-    room.update_spectator_buffer();
-    return false;
-  });
+  // if ygopro.constants.MSG[msg] == 'SELECT_YESNO'
+  // stringid = buffer.readUInt32LE(2)
+  // if stringid == 1989
+  // room.update_spectator_buffer()
+  // return false
 
+  // ygopro.stoc_follow_after 'CHANGE_SIDE', true, (buffer, info, client, server, datas)->
+  // room=ROOM_all[client.rid]
+  // return unless room
+  // room.update_spectator_buffer()
+  // return false
   ygopro.stoc_follow('GAME_MSG', true, function(buffer, info, client, server, datas) {
     var card, cpos, hint_type, len2, line, loc, m, msg, playertype, ppos, ref2, room, trigger_location;
     room = ROOM_all[client.rid];
