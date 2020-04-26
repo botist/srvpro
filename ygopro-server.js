@@ -4276,7 +4276,7 @@
           kick_room_found = false;
           for (o = 0, len4 = ROOM_all.length; o < len4; o++) {
             room = ROOM_all[o];
-            if (!(room && room.established && (u.query.kick === "all" || u.query.kick === room.process_pid.toString() || u.query.kick === room.name))) {
+            if (!(room && room.established && (u.query.kick === "all" || u.query.kick === room.game_id.toString() || u.query.kick === room.name))) {
               continue;
             }
             kick_room_found = true;

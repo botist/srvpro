@@ -3442,7 +3442,7 @@ if settings.modules.http
           response.end(addCallback(u.query.callback, "['密码错误', 0]"))
           return
         kick_room_found = false
-        for room in ROOM_all when room and room.established and (u.query.kick == "all" or u.query.kick == room.process_pid.toString() or u.query.kick == room.name)
+        for room in ROOM_all when room and room.established and (u.query.kick == "all" or u.query.kick == room.game_id.toString() or u.query.kick == room.name)
           kick_room_found = true
           if room.duel_stage != ygopro.constants.DUEL_STAGE.BEGIN
             room.scores[room.dueling_players[0].name_vpass] = 0
