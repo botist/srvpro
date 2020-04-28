@@ -1016,7 +1016,7 @@ SOCKET_flush_data = global.SOCKET_flush_data = (sk, datas) ->
 
 sanitize = (str)->
   s = ''
-  for c of str
+  for i,c of str
     try
       s += utf8.decode(utf8.encode(c))
     catch ignored

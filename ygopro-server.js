@@ -1374,9 +1374,10 @@
   };
 
   sanitize = function(str) {
-    var c, ignored, s;
+    var c, i, ignored, s;
     s = '';
-    for (c in str) {
+    for (i in str) {
+      c = str[i];
       try {
         s += utf8.decode(utf8.encode(c));
       } catch (error1) {
