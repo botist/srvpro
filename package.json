@@ -26,8 +26,8 @@
     "sqlite3": "latest",
     "underscore": "latest",
     "underscore.string": "latest",
-    "ws": "^1.1.1",
-    "wtf-8": "^1.0.1"
+    "utf8": "^3.0.0",
+    "ws": "^1.1.1"
   },
   "license": "AGPL-3.0",
   "scripts": {
