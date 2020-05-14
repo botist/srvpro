@@ -1039,6 +1039,7 @@ class Room
     @hostinfo.draw_count = info.info.draw_count
     @hostinfo.time_limit = info.info.time_limit
     @hostinfo.handshake = info.info.handshake
+    @hostinfo.version = info.info.version
     @hostinfo.team1 = info.info.team1
     @hostinfo.team2 = info.info.team2
     @hostinfo.best_of = info.info.best_of
@@ -1829,6 +1830,13 @@ ygopro.ctos_follow 'CREATE_GAME', false, (buffer, info, client, server, datas)->
   
   if !client.name or client.name==""
     ygopro.stoc_die(client, "${bad_user_name}")
+	
+  else if info.info.version != settings.version
+    ygopro.stoc_send client, 'ERROR_MSG', {
+      msg: 5
+      code: settings.version
+    }
+    CLIENT_kick(client)
 
   else if ROOM_connected_ip[client.ip] > 5
     log.warn("MULTI LOGIN", client.name, client.ip)
@@ -1908,7 +1916,7 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server, datas)->
   if !client.name or client.name==""
     ygopro.stoc_die(client, "${bad_user_name}")
 	
-  else if info.version2 != settings.version # and (info.version < 9020 or settings.version != 4927) #强行兼容23333版
+  else if info.version2 != settings.version
     ygopro.stoc_send client, 'ERROR_MSG', {
       msg: 5
       code: settings.version
