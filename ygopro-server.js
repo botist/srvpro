@@ -1404,6 +1404,7 @@
       this.hostinfo.draw_count = info.info.draw_count;
       this.hostinfo.time_limit = info.info.time_limit;
       this.hostinfo.handshake = info.info.handshake;
+      this.hostinfo.version = info.info.version;
       this.hostinfo.team1 = info.info.team1;
       this.hostinfo.team2 = info.info.team2;
       this.hostinfo.best_of = info.info.best_of;
@@ -2443,6 +2444,12 @@
     client.pass = info.pass;
     if (!client.name || client.name === "") {
       ygopro.stoc_die(client, "${bad_user_name}");
+    } else if (info.info.version !== settings.version) {
+      ygopro.stoc_send(client, 'ERROR_MSG', {
+        msg: 5,
+        code: settings.version
+      });
+      CLIENT_kick(client);
     } else if (ROOM_connected_ip[client.ip] > 5) {
       log.warn("MULTI LOGIN", client.name, client.ip);
       ygopro.stoc_die(client, "${too_much_connection}" + client.ip);
@@ -2517,7 +2524,7 @@
     client.pass = info.pass;
     if (!client.name || client.name === "") {
       ygopro.stoc_die(client, "${bad_user_name}");
-    } else if (info.version2 !== settings.version) { // and (info.version < 9020 or settings.version != 4927) #强行兼容23333版
+    } else if (info.version2 !== settings.version) {
       ygopro.stoc_send(client, 'ERROR_MSG', {
         msg: 5,
         code: settings.version
