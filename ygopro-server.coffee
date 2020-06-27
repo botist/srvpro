@@ -18,6 +18,7 @@ botServer = {
 	connect: -> {},
 	write: -> {},
 	write2: -> {},
+	uploadreplay: -> {},
 }
 
 # 三方库
@@ -1078,7 +1079,7 @@ class Room
     #else
      # @hostinfo.lflist =  -1
     try
-      @process = spawn (if @core_path then './cores/'+@core_path+'/./ygopro' else './ygopro'), [], {cwd: 'ygopro'}
+      @process = spawn (if @core_path then './cores/'+@core_path+'/./ygopro' else './ygopro'), ["", @game_id], {cwd: 'ygopro'}
       @process_pid = @process.pid
       @process.on 'error', (err)=>
         _.each @players, (player)->
@@ -1118,10 +1119,6 @@ class Room
         log.info "YGOPRO " + data
         ygopro.stoc_send_chat_to_room this, data, ygopro.constants.COLORS.RED
         @has_ygopro_error = true
-        @ygopro_error_length = if @ygopro_error_length then @ygopro_error_length + data.length else data.length
-        if @ygopro_error_length > 10000
-          @send_replays()
-          @process.kill()
         return
     catch
       @error = "${create_room_failed}"
@@ -1198,40 +1195,14 @@ class Room
             refresh_challonge_cache()
           return
       })
-    if @player_datas.length and settings.modules.cloud_replay.enabled
-      replay_id = @cloud_replay_id
-      if @has_ygopro_error
-        log_rep_id = true
-      player_names=@player_datas[0].name + (if @player_datas[2] then "+" + @player_datas[2].name else "") +
-                    " VS " +
-                   (if @player_datas[1] then @player_datas[1].name else "AI") +
-                   (if @player_datas[3] then "+" + @player_datas[3].name else "")
-      player_ips=[]
-      _.each @player_datas, (player)->
-        player_ips.push(player.key)
-        return
-      recorder_buffer=Buffer.concat(@recorder_buffers)
-      zlib.deflate recorder_buffer, (err, replay_buffer) ->
-        replay_buffer=replay_buffer.toString('binary')
-        #log.info err, replay_buffer
-        date_time=moment().format('YYYY-MM-DD HH:mm:ss')
-        #replay_id=Math.floor(Math.random()*100000000)
-        redisdb.hmset("replay:"+replay_id,
-                      "replay_id", replay_id,
-                      "replay_buffer", replay_buffer,
-                      "player_names", player_names,
-                      "date_time", date_time)
-        if !log_rep_id and !settings.modules.cloud_replay.never_expire
-          redisdb.expire("replay:"+replay_id, 60*60*24)
-        recorded_ip=[]
-        _.each player_ips, (player_ip)->
-          return if _.contains(recorded_ip, player_ip)
-          recorded_ip.push player_ip
-          redisdb.lpush(player_ip+":replays", replay_id)
-          return
-        if log_rep_id
-          log.info "error replay: R#" + replay_id
-        return
+	  
+    if @has_ygopro_error and !@replay_uploaded
+      uploadreplay(this)
+    else
+      try
+        fs.unlinkSync("./ygopro/replay/"+@game_id+".yrp")
+        fs.unlinkSync("./ygopro/replay/"+@game_id+".yrpX")
+      catch error
     # @watcher_buffers = []
     # @recorder_buffers = []
     @players = []
@@ -2816,105 +2787,32 @@ ygopro.ctos_follow 'CHAT', true, (buffer, info, client, server, datas)->
     ROOM_ban_player(client.name, client.ip, "${random_ban_reason_abuse}")
   return cancel
 
-# ygopro.ctos_follow 'UPDATE_DECK', true, (buffer, info, client, server, datas)->
-  # if settings.modules.reconnect.enabled and client.pre_reconnecting
-    # if !CLIENT_is_able_to_reconnect(client) and !CLIENT_is_able_to_kick_reconnect(client)
-      # ygopro.stoc_send_chat(client, "${reconnect_failed}", ygopro.constants.COLORS.RED)
-      # CLIENT_kick(client)
-    # else if CLIENT_is_able_to_reconnect(client, buffer)
-      # CLIENT_reconnect(client)
-    # else if CLIENT_is_able_to_kick_reconnect(client, buffer)
-      # CLIENT_kick_reconnect(client, buffer)
-    # else
-      # ygopro.stoc_send_chat(client, "${deck_incorrect_reconnect}", ygopro.constants.COLORS.RED)
-      # ygopro.stoc_send(client, 'ERROR_MSG', {
-        # msg: 2,
-        # code: 0
-      # })
-      # ygopro.stoc_send(client, 'HS_PLAYER_CHANGE', {
-        # status: (client.pos << 4) | 0xa
-      # })
-    # return true
-  # room=ROOM_all[client.rid]
-  # return false unless room
-  # log.info info
-  # if info.mainc > 256 or info.sidec > 256 # Prevent attack, see https://github.com/Fluorohydride/ygopro/issues/2174
-    # CLIENT_kick(client)
-    # return true
-  # buff_main = (info.deckbuf[i] for i in [0...info.mainc])
-  # buff_side = (info.deckbuf[i] for i in [info.mainc...info.mainc + info.sidec])
-  # client.main = buff_main
-  # client.side = buff_side
-  # if room.duel_stage != ygopro.constants.DUEL_STAGE.BEGIN
-    # client.selected_preduel = true
-    # if client.side_tcount
-      # clearInterval client.side_interval
-      # client.side_interval = null
-      # client.side_tcount = null
-  # else
-    # client.start_deckbuf = Buffer.from(buffer)
-  # oppo_pos = if room.hostinfo.mode == 2 then 2 else 1
-  # if settings.modules.http.quick_death_rule >= 2 and room.duel_stage != ygopro.constants.DUEL_STAGE.BEGIN and room.death and room.scores[room.dueling_players[0].name_vpass] != room.scores[room.dueling_players[oppo_pos].name_vpass]
-    # win_pos = if room.scores[room.dueling_players[0].name_vpass] > room.scores[room.dueling_players[oppo_pos].name_vpass] then 0 else oppo_pos
-    # room.finished_by_death = true
-    # ygopro.stoc_send_chat_to_room(room, "${death2_finish_part1}" + room.dueling_players[win_pos].name + "${death2_finish_part2}", ygopro.constants.COLORS.BABYBLUE)
-    # CLIENT_send_replays(room.dueling_players[oppo_pos - win_pos], room) if room.hostinfo.mode == 1
-    # ygopro.stoc_send(room.dueling_players[oppo_pos - win_pos], 'DUEL_END')
-    # ygopro.stoc_send(room.dueling_players[oppo_pos - win_pos + 1], 'DUEL_END') if room.hostinfo.mode == 2
-    # room.scores[room.dueling_players[oppo_pos - win_pos].name_vpass] = -1
-    # CLIENT_kick(room.dueling_players[oppo_pos - win_pos])
-    # CLIENT_kick(room.dueling_players[oppo_pos - win_pos + 1]) if room.hostinfo.mode == 2
-    # return true
-  # if room.random_type or room.arena
-    # if client.pos == 0
-      # room.waiting_for_player = room.waiting_for_player2
-    # room.last_active_time = moment()
-  # else if room.duel_stage == ygopro.constants.DUEL_STAGE.BEGIN and room.hostinfo.mode == 1 and settings.modules.tournament_mode.enabled and settings.modules.tournament_mode.deck_check and fs.readdirSync(settings.modules.tournament_mode.deck_path).length
-    # struct = ygopro.structs["deck"]
-    # struct._setBuff(buffer)
-    # struct.set("mainc", 1)
-    # struct.set("sidec", 1)
-    # struct.set("deckbuf", [4392470, 4392470])
-    # buffer = struct.buffer
-    # found_deck=false
-    # decks=fs.readdirSync(settings.modules.tournament_mode.deck_path)
-    # for deck in decks
-      # if _.endsWith(deck, client.name+".ydk")
-        # found_deck=deck
-      # if _.endsWith(deck, client.name+".ydk.ydk")
-        # found_deck=deck
-    # if found_deck
-      # deck_text=fs.readFileSync(settings.modules.tournament_mode.deck_path+found_deck,{encoding:"ASCII"})
-      # deck_array=deck_text.split("\n")
-      # deck_main=[]
-      # deck_side=[]
-      # current_deck=deck_main
-      # for line in deck_array
-        # if line.indexOf("!side")>=0
-          # current_deck=deck_side
-        # card=parseInt(line)
-        # current_deck.push(card) unless isNaN(card)
-      # if _.isEqual(buff_main, deck_main) and _.isEqual(buff_side, deck_side)
-        # deckbuf=deck_main.concat(deck_side)
-        # struct.set("mainc", deck_main.length)
-        # struct.set("sidec", deck_side.length)
-        # struct.set("deckbuf", deckbuf)
-        # buffer = struct.buffer
-        # log.info("deck ok: " + client.name)
-        # ygopro.stoc_send_chat(client, "${deck_correct_part1} #{found_deck} ${deck_correct_part2}", ygopro.constants.COLORS.BABYBLUE)
-      # else
-        # log.info("bad deck: " + client.name + " / " + buff_main + " / " + buff_side)
-        # ygopro.stoc_send_chat(client, "${deck_incorrect_part1} #{found_deck} ${deck_incorrect_part2}", ygopro.constants.COLORS.RED)
-    # else
-      # log.info("player deck not found: " + client.name)
-      # ygopro.stoc_send_chat(client, "#{client.name}${deck_not_found}", ygopro.constants.COLORS.RED)
-  # return false
-
 ygopro.ctos_follow 'RESPONSE', false, (buffer, info, client, server, datas)->
   room=ROOM_all[client.rid]
   return unless room and (room.random_type or room.arena)
   room.last_active_time = moment()
   return
+
+ygopro.ctos_follow 'REMATCH_RESPONSE', false, (buffer, info, client, server, datas)->
+  room=ROOM_all[client.rid]
+  return unless room
+  room.has_ygopro_error=false
+  room.replay_uploaded=false
+  return
+
+ygopro.stoc_follow 'REMATCH', false, (buffer, info, client, server, datas)->
+  room=ROOM_all[client.rid]
+  return unless room and !room.replay_uploaded
+  if room.has_ygopro_error
+     botServer.uploadreplay(room)
+     room.replay_uploaded=true
+  else
+    try
+      fs.unlinkSync("./ygopro/replay/"+room.game_id+".yrp")
+      fs.unlinkSync("./ygopro/replay/"+room.game_id+".yrpX")
+    catch error
+  room.has_ygopro_error=false
+  return false
 
 # ygopro.stoc_follow 'TIME_LIMIT', true, (buffer, info, client, server, datas)->
   # room=ROOM_all[client.rid]

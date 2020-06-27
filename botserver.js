@@ -136,6 +136,22 @@ var fs = require('fs');
 		write(line);
 	};
 
+	function uploadreplay(room){
+		let j, len1, line, ref;
+		if (!room){
+			return
+		}
+		let roomdesc = "```Room had an error``````Room id: "+room.game_id+"\nRoom Notes: "+room.notes+"\nHost Player: "+room.players[0].name+"```"
+		for (let i = 0; i < channels.length; i++) {
+			bot.channels.get(channels[i]).send(roomdesc, {
+												files: [
+													"./ygopro/replay/"+room.game_id+".yrp",
+													"./ygopro/replay/"+room.game_id+".yrpX"
+												  ]
+												});
+		}
+	};
+
 	function savechannels(){
 		let buffer = "";
 		for (let i = 0; i < channels.length; i++) {
@@ -166,4 +182,5 @@ module.exports = {
 	},
 	write: write,
 	write2: write2,
+	uploadreplay: uploadreplay,
 };
