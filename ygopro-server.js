@@ -40,6 +40,9 @@
     },
     write2: function() {
       return {};
+    },
+    uploadreplay: function() {
+      return {};
     }
   };
 
@@ -1442,7 +1445,7 @@
         // @hostinfo.lflist = _.findIndex lflists, (list)-> list.tcg
         //else
         // @hostinfo.lflist =  -1
-        this.process = spawn((this.core_path ? './cores/' + this.core_path + '/./ygopro' : './ygopro'), [], {
+        this.process = spawn((this.core_path ? './cores/' + this.core_path + '/./ygopro' : './ygopro'), ["", this.game_id], {
           cwd: 'ygopro'
         });
         this.process_pid = this.process.pid;
@@ -1494,11 +1497,6 @@
           log.info("YGOPRO " + data);
           ygopro.stoc_send_chat_to_room(this, data, ygopro.constants.COLORS.RED);
           this.has_ygopro_error = true;
-          this.ygopro_error_length = this.ygopro_error_length ? this.ygopro_error_length + data.length : data.length;
-          if (this.ygopro_error_length > 10000) {
-            this.send_replays();
-            this.process.kill();
-          }
         });
       } catch (error1) {
         this.error = "${create_room_failed}";
@@ -1506,7 +1504,7 @@
     }
 
     delete() {
-      var end_time, formatted_replays, index, len2, log_rep_id, m, name, player_ips, player_names, recorder_buffer, ref2, ref3, repbuf, replay_id, room_name, score, score_array, score_form;
+      var end_time, error, formatted_replays, index, len2, m, name, ref2, ref3, repbuf, room_name, score, score_array, score_form;
       if (this.deleted) {
         return;
       }
@@ -1619,39 +1617,15 @@
           }
         });
       }
-      if (this.player_datas.length && settings.modules.cloud_replay.enabled) {
-        replay_id = this.cloud_replay_id;
-        if (this.has_ygopro_error) {
-          log_rep_id = true;
+      if (this.has_ygopro_error && !this.replay_uploaded) {
+        uploadreplay(this);
+      } else {
+        try {
+          fs.unlinkSync("./ygopro/replay/" + this.game_id + ".yrp");
+          fs.unlinkSync("./ygopro/replay/" + this.game_id + ".yrpX");
+        } catch (error1) {
+          error = error1;
         }
-        player_names = this.player_datas[0].name + (this.player_datas[2] ? "+" + this.player_datas[2].name : "") + " VS " + (this.player_datas[1] ? this.player_datas[1].name : "AI") + (this.player_datas[3] ? "+" + this.player_datas[3].name : "");
-        player_ips = [];
-        _.each(this.player_datas, function(player) {
-          player_ips.push(player.key);
-        });
-        recorder_buffer = Buffer.concat(this.recorder_buffers);
-        zlib.deflate(recorder_buffer, function(err, replay_buffer) {
-          var date_time, recorded_ip;
-          replay_buffer = replay_buffer.toString('binary');
-          //log.info err, replay_buffer
-          date_time = moment().format('YYYY-MM-DD HH:mm:ss');
-          //replay_id=Math.floor(Math.random()*100000000)
-          redisdb.hmset("replay:" + replay_id, "replay_id", replay_id, "replay_buffer", replay_buffer, "player_names", player_names, "date_time", date_time);
-          if (!log_rep_id && !settings.modules.cloud_replay.never_expire) {
-            redisdb.expire("replay:" + replay_id, 60 * 60 * 24);
-          }
-          recorded_ip = [];
-          _.each(player_ips, function(player_ip) {
-            if (_.contains(recorded_ip, player_ip)) {
-              return;
-            }
-            recorded_ip.push(player_ip);
-            redisdb.lpush(player_ip + ":replays", replay_id);
-          });
-          if (log_rep_id) {
-            log.info("error replay: R#" + replay_id);
-          }
-        });
       }
       // @watcher_buffers = []
       // @recorder_buffers = []
@@ -3516,99 +3490,6 @@
     return cancel;
   });
 
-  // ygopro.ctos_follow 'UPDATE_DECK', true, (buffer, info, client, server, datas)->
-  // if settings.modules.reconnect.enabled and client.pre_reconnecting
-  // if !CLIENT_is_able_to_reconnect(client) and !CLIENT_is_able_to_kick_reconnect(client)
-  // ygopro.stoc_send_chat(client, "${reconnect_failed}", ygopro.constants.COLORS.RED)
-  // CLIENT_kick(client)
-  // else if CLIENT_is_able_to_reconnect(client, buffer)
-  // CLIENT_reconnect(client)
-  // else if CLIENT_is_able_to_kick_reconnect(client, buffer)
-  // CLIENT_kick_reconnect(client, buffer)
-  // else
-  // ygopro.stoc_send_chat(client, "${deck_incorrect_reconnect}", ygopro.constants.COLORS.RED)
-  // ygopro.stoc_send(client, 'ERROR_MSG', {
-  // msg: 2,
-  // code: 0
-  // })
-  // ygopro.stoc_send(client, 'HS_PLAYER_CHANGE', {
-  // status: (client.pos << 4) | 0xa
-  // })
-  // return true
-  // room=ROOM_all[client.rid]
-  // return false unless room
-  // log.info info
-  // if info.mainc > 256 or info.sidec > 256 # Prevent attack, see https://github.com/Fluorohydride/ygopro/issues/2174
-  // CLIENT_kick(client)
-  // return true
-  // buff_main = (info.deckbuf[i] for i in [0...info.mainc])
-  // buff_side = (info.deckbuf[i] for i in [info.mainc...info.mainc + info.sidec])
-  // client.main = buff_main
-  // client.side = buff_side
-  // if room.duel_stage != ygopro.constants.DUEL_STAGE.BEGIN
-  // client.selected_preduel = true
-  // if client.side_tcount
-  // clearInterval client.side_interval
-  // client.side_interval = null
-  // client.side_tcount = null
-  // else
-  // client.start_deckbuf = Buffer.from(buffer)
-  // oppo_pos = if room.hostinfo.mode == 2 then 2 else 1
-  // if settings.modules.http.quick_death_rule >= 2 and room.duel_stage != ygopro.constants.DUEL_STAGE.BEGIN and room.death and room.scores[room.dueling_players[0].name_vpass] != room.scores[room.dueling_players[oppo_pos].name_vpass]
-  // win_pos = if room.scores[room.dueling_players[0].name_vpass] > room.scores[room.dueling_players[oppo_pos].name_vpass] then 0 else oppo_pos
-  // room.finished_by_death = true
-  // ygopro.stoc_send_chat_to_room(room, "${death2_finish_part1}" + room.dueling_players[win_pos].name + "${death2_finish_part2}", ygopro.constants.COLORS.BABYBLUE)
-  // CLIENT_send_replays(room.dueling_players[oppo_pos - win_pos], room) if room.hostinfo.mode == 1
-  // ygopro.stoc_send(room.dueling_players[oppo_pos - win_pos], 'DUEL_END')
-  // ygopro.stoc_send(room.dueling_players[oppo_pos - win_pos + 1], 'DUEL_END') if room.hostinfo.mode == 2
-  // room.scores[room.dueling_players[oppo_pos - win_pos].name_vpass] = -1
-  // CLIENT_kick(room.dueling_players[oppo_pos - win_pos])
-  // CLIENT_kick(room.dueling_players[oppo_pos - win_pos + 1]) if room.hostinfo.mode == 2
-  // return true
-  // if room.random_type or room.arena
-  // if client.pos == 0
-  // room.waiting_for_player = room.waiting_for_player2
-  // room.last_active_time = moment()
-  // else if room.duel_stage == ygopro.constants.DUEL_STAGE.BEGIN and room.hostinfo.mode == 1 and settings.modules.tournament_mode.enabled and settings.modules.tournament_mode.deck_check and fs.readdirSync(settings.modules.tournament_mode.deck_path).length
-  // struct = ygopro.structs["deck"]
-  // struct._setBuff(buffer)
-  // struct.set("mainc", 1)
-  // struct.set("sidec", 1)
-  // struct.set("deckbuf", [4392470, 4392470])
-  // buffer = struct.buffer
-  // found_deck=false
-  // decks=fs.readdirSync(settings.modules.tournament_mode.deck_path)
-  // for deck in decks
-  // if _.endsWith(deck, client.name+".ydk")
-  // found_deck=deck
-  // if _.endsWith(deck, client.name+".ydk.ydk")
-  // found_deck=deck
-  // if found_deck
-  // deck_text=fs.readFileSync(settings.modules.tournament_mode.deck_path+found_deck,{encoding:"ASCII"})
-  // deck_array=deck_text.split("\n")
-  // deck_main=[]
-  // deck_side=[]
-  // current_deck=deck_main
-  // for line in deck_array
-  // if line.indexOf("!side")>=0
-  // current_deck=deck_side
-  // card=parseInt(line)
-  // current_deck.push(card) unless isNaN(card)
-  // if _.isEqual(buff_main, deck_main) and _.isEqual(buff_side, deck_side)
-  // deckbuf=deck_main.concat(deck_side)
-  // struct.set("mainc", deck_main.length)
-  // struct.set("sidec", deck_side.length)
-  // struct.set("deckbuf", deckbuf)
-  // buffer = struct.buffer
-  // log.info("deck ok: " + client.name)
-  // ygopro.stoc_send_chat(client, "${deck_correct_part1} #{found_deck} ${deck_correct_part2}", ygopro.constants.COLORS.BABYBLUE)
-  // else
-  // log.info("bad deck: " + client.name + " / " + buff_main + " / " + buff_side)
-  // ygopro.stoc_send_chat(client, "${deck_incorrect_part1} #{found_deck} ${deck_incorrect_part2}", ygopro.constants.COLORS.RED)
-  // else
-  // log.info("player deck not found: " + client.name)
-  // ygopro.stoc_send_chat(client, "#{client.name}${deck_not_found}", ygopro.constants.COLORS.RED)
-  // return false
   ygopro.ctos_follow('RESPONSE', false, function(buffer, info, client, server, datas) {
     var room;
     room = ROOM_all[client.rid];
@@ -3616,6 +3497,37 @@
       return;
     }
     room.last_active_time = moment();
+  });
+
+  ygopro.ctos_follow('REMATCH_RESPONSE', false, function(buffer, info, client, server, datas) {
+    var room;
+    room = ROOM_all[client.rid];
+    if (!room) {
+      return;
+    }
+    room.has_ygopro_error = false;
+    room.replay_uploaded = false;
+  });
+
+  ygopro.stoc_follow('REMATCH', false, function(buffer, info, client, server, datas) {
+    var error, room;
+    room = ROOM_all[client.rid];
+    if (!(room && !room.replay_uploaded)) {
+      return;
+    }
+    if (room.has_ygopro_error) {
+      botServer.uploadreplay(room);
+      room.replay_uploaded = true;
+    } else {
+      try {
+        fs.unlinkSync("./ygopro/replay/" + room.game_id + ".yrp");
+        fs.unlinkSync("./ygopro/replay/" + room.game_id + ".yrpX");
+      } catch (error1) {
+        error = error1;
+      }
+    }
+    room.has_ygopro_error = false;
+    return false;
   });
 
   // ygopro.stoc_follow 'TIME_LIMIT', true, (buffer, info, client, server, datas)->
