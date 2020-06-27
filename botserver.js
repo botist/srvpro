@@ -142,14 +142,20 @@ var fs = require('fs');
 			return
 		}
 		let roomdesc = "```Room had an error``````Room id: "+room.game_id+"\nRoom Notes: "+room.notes+"\nHost Player: "+room.players[0].name+"```"
+		let uploads = [];
 		for (let i = 0; i < channels.length; i++) {
-			bot.channels.get(channels[i]).send(roomdesc, {
+			// .send returns a promise
+			uploads.push(bot.channels.get(channels[i]).send(roomdesc, {
 												files: [
 													"./ygopro/replay/"+room.game_id+".yrp",
 													"./ygopro/replay/"+room.game_id+".yrpX"
 												  ]
-												});
+												}));
 		}
+		Promise.all(uploads).then(() => {
+			fs.unlinkSync("./ygopro/replay/"+room.game_id+".yrp");
+			fs.unlinkSync("./ygopro/replay/"+room.game_id+".yrpX")
+		})
 	};
 
 	function savechannels(){
