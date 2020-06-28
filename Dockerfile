@@ -1,23 +1,17 @@
-# Dockerfile for SRVPro
-FROM node:12-buster-slim
-
-RUN npm install -g pm2
-RUN npm install -g coffeescript
-
-# apt
-RUN apt update && \
-    env DEBIAN_FRONTEND=noninteractive apt install -y wget git build-essential libevent-dev libsqlite3-dev mono-complete p7zip-full python && \
-    rm -rf /var/lib/apt/lists/* 
-
-# srvpro
-COPY . /srvpro
+FROM node:12-buster
+# make, python, libevent, sqlite3 are already installed
+# not using mono, 7zip, git, or wget
 WORKDIR /srvpro
-RUN npm i
 RUN mkdir decks replays logs /redis
+
+RUN npm install -g pm2 coffeescript
+
+COPY package*.json ./
+RUN npm i
+
+COPY . .
 #RUN coffee -c ./ygopro-server.coffee
 
-# infos
-WORKDIR /srvpro
 EXPOSE 7911 7922
 #VOLUME [ /srvpro/config, /srvpro/decks, /srvpro/replays, /srvpro/ygopro ]
 
