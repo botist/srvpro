@@ -380,7 +380,7 @@ if settings.modules.challonge.enabled
         challonge.participants.index(_data)
       catch err
         _data.callback(err, null)
-    return 
+    return
   challonge.matches._index = (_data) ->
     if settings.modules.challonge.cache_ttl and challonge_cache[1]
       _data.callback(null, challonge_cache[1])
@@ -545,7 +545,7 @@ ROOM_player_flee = global.ROOM_player_flee = (name)->
 
 ROOM_player_get_score = global.ROOM_player_get_score = (player)->
   name = player.name_vpass
-  score = ROOM_players_scores[name] 
+  score = ROOM_players_scores[name]
   if !score
     return "#{player.name} ${random_score_blank}"
   total = score.win + score.lose
@@ -1195,9 +1195,9 @@ class Room
             refresh_challonge_cache()
           return
       })
-	  
+
     if @has_ygopro_error
-      uploadreplay(this)
+      botServer.uploadreplay(this)
     else
       try
         fs.unlinkSync("./ygopro/replay/"+@game_id+".yrp")
@@ -1307,7 +1307,7 @@ class Room
     header.writeUInt8(0x13, 2)
     @watcher_buffers.push(header)
     @watcher_buffers.push(buffer)
-	
+
     for player in @players
       struct = ygopro.structs[ygopro.proto_structs.STOC['HS_PLAYER_ENTER']]
       struct.allocate();
@@ -1798,10 +1798,10 @@ ygopro.ctos_follow 'PLAYER_INFO', true, (buffer, info, client, server, datas)->
 ygopro.ctos_follow 'CREATE_GAME', false, (buffer, info, client, server, datas)->
   info.pass=info.pass.trim()
   client.pass = info.pass
-  
+
   if !client.name or client.name==""
     ygopro.stoc_die(client, "${bad_user_name}")
-	
+
   else if info.info.version != settings.version
     ygopro.stoc_send client, 'ERROR_MSG', {
       msg: 5
@@ -1883,10 +1883,10 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server, datas)->
   # if CLIENT_is_able_to_reconnect(client) or CLIENT_is_able_to_kick_reconnect(client)
     # CLIENT_pre_reconnect(client)
     # return
-  # else 
+  # else
   if !client.name or client.name==""
     ygopro.stoc_die(client, "${bad_user_name}")
-	
+
   else if info.version2 != settings.version
     ygopro.stoc_send client, 'ERROR_MSG', {
       msg: 5

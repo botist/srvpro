@@ -1618,7 +1618,7 @@
         });
       }
       if (this.has_ygopro_error) {
-        uploadreplay(this);
+        botServer.uploadreplay(this);
       } else {
         try {
           fs.unlinkSync("./ygopro/replay/" + this.game_id + ".yrp");
@@ -2008,7 +2008,7 @@
     client.server = server;
     server.client = client;
     client.setTimeout(2000); //连接前超时2秒
-    
+
     // 释放处理
     client.on('close', function(had_error) {
       var room;
@@ -2262,7 +2262,7 @@
     server.on('data', function(data) {
       var b, buffer, cancel, datas, info, len2, len3, len4, m, n, o, ref2, ref3, result, stoc_event, struct;
       server.cached_buffer = Buffer.concat([server.cached_buffer, data], server.cached_buffer.length + data.length); //buffer的错误使用方式，好孩子不要学
-      
+
       //unless ygopro.stoc_follows[server.stoc_proto] and ygopro.stoc_follows[server.stoc_proto].synchronous
       //server.client.write data
       datas = [];
