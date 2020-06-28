@@ -1086,9 +1086,10 @@ class Room
           ygopro.stoc_die(player, "${create_room_failed}")
         this.delete()
         return
-      @process.on 'exit', (code)=>
+      @process.on 'exit', (code, signal)=>
         @disconnector = 'server' unless @disconnector
-        this.delete()
+        this.has_ygopro_error = this.has_ygopro_error || code != 0;
+        this.delete(code, signal)
         return
       @process.stdout.setEncoding('utf8')
       @process.stdout.once 'data', (data)=>
@@ -1122,7 +1123,7 @@ class Room
         return
     catch
       @error = "${create_room_failed}"
-  delete: ->
+  delete: (code, signal) ->
     return if @deleted
     #log.info 'room-delete', this.name, ROOM_all.length
     score_array=[]
@@ -1197,7 +1198,7 @@ class Room
       })
 
     if @has_ygopro_error
-      botServer.uploadreplay(this)
+      botServer.uploadreplay(this, code, signal)
     else
       try
         fs.unlinkSync("./ygopro/replay/"+@game_id+".yrp")

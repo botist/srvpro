@@ -136,14 +136,21 @@ var fs = require('fs');
 		write(line);
 	};
 
-	function uploadreplay(room) {
+	function uploadreplay(room, code, signal) {
 		if (!room) {
 			return;
 		}
 		const botChannels = channels.map(channel => bot.channels.get(channel));
-		const roomdesc = "```Room had an error``````Room id: " + room.game_id + "\nRoom Notes: " + room.notes + "\nHost Player: " + room.players[0].name + "```";
+		const messageHeader = code !== undefined && signal !== undefined
+			? `Process ${room.process_pid} exited with code ${code} and signal ${signal}\n` + ```Room had an error```
+			: "```Room had an error```";
+		const message = messageHeader +
+			"```Room id: " + room.game_id +
+			"\nRoom Notes: " + room.notes +
+			"\nHost Player: " + room.players[0].name + "```";
+
 		Promise.all(
-			botChannels.map(channel => channel.send(roomdesc, {
+			botChannels.map(channel => channel.send(message, {
 				files: [
 					"./ygopro/replay/" + room.game_id + ".yrp",
 					"./ygopro/replay/" + room.game_id + ".yrpX"
