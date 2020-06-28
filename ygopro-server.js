@@ -1617,7 +1617,7 @@
           }
         });
       }
-      if (this.has_ygopro_error && !this.replay_uploaded) {
+      if (this.has_ygopro_error) {
         uploadreplay(this);
       } else {
         try {
@@ -3499,25 +3499,14 @@
     room.last_active_time = moment();
   });
 
-  ygopro.ctos_follow('REMATCH_RESPONSE', false, function(buffer, info, client, server, datas) {
-    var room;
-    room = ROOM_all[client.rid];
-    if (!room) {
-      return;
-    }
-    room.has_ygopro_error = false;
-    room.replay_uploaded = false;
-  });
-
   ygopro.stoc_follow('REMATCH', false, function(buffer, info, client, server, datas) {
     var error, room;
     room = ROOM_all[client.rid];
-    if (!(room && !room.replay_uploaded)) {
+    if (!(room && client.pos === 0)) {
       return;
     }
     if (room.has_ygopro_error) {
       botServer.uploadreplay(room);
-      room.replay_uploaded = true;
     } else {
       try {
         fs.unlinkSync("./ygopro/replay/" + room.game_id + ".yrp");
@@ -3527,7 +3516,6 @@
       }
     }
     room.has_ygopro_error = false;
-    return false;
   });
 
   // ygopro.stoc_follow 'TIME_LIMIT', true, (buffer, info, client, server, datas)->
@@ -3682,13 +3670,24 @@
   });
 
   ygopro.stoc_follow('CHANGE_SIDE', false, function(buffer, info, client, server, datas) {
-    var room, room_name, sinterval, temp_log;
+    var error, room, room_name, sinterval, temp_log;
     room = ROOM_all[client.rid];
     if (!room) {
       return;
     }
     if (client.pos === 0) {
       room.duel_stage = ygopro.constants.DUEL_STAGE.SIDING;
+      if (room.has_ygopro_error) {
+        botServer.uploadreplay(room);
+      } else {
+        try {
+          fs.unlinkSync("./ygopro/replay/" + room.game_id + ".yrp");
+          fs.unlinkSync("./ygopro/replay/" + room.game_id + ".yrpX");
+        } catch (error1) {
+          error = error1;
+        }
+      }
+      room.has_ygopro_error = false;
     }
     client.selected_preduel = false;
     if (settings.modules.side_timeout) {

@@ -1196,7 +1196,7 @@ class Room
           return
       })
 	  
-    if @has_ygopro_error and !@replay_uploaded
+    if @has_ygopro_error
       uploadreplay(this)
     else
       try
@@ -2793,26 +2793,18 @@ ygopro.ctos_follow 'RESPONSE', false, (buffer, info, client, server, datas)->
   room.last_active_time = moment()
   return
 
-ygopro.ctos_follow 'REMATCH_RESPONSE', false, (buffer, info, client, server, datas)->
-  room=ROOM_all[client.rid]
-  return unless room
-  room.has_ygopro_error=false
-  room.replay_uploaded=false
-  return
-
 ygopro.stoc_follow 'REMATCH', false, (buffer, info, client, server, datas)->
   room=ROOM_all[client.rid]
-  return unless room and !room.replay_uploaded
+  return unless room and client.pos == 0
   if room.has_ygopro_error
      botServer.uploadreplay(room)
-     room.replay_uploaded=true
   else
     try
       fs.unlinkSync("./ygopro/replay/"+room.game_id+".yrp")
       fs.unlinkSync("./ygopro/replay/"+room.game_id+".yrpX")
     catch error
   room.has_ygopro_error=false
-  return false
+  return
 
 # ygopro.stoc_follow 'TIME_LIMIT', true, (buffer, info, client, server, datas)->
   # room=ROOM_all[client.rid]
@@ -2942,6 +2934,14 @@ ygopro.stoc_follow 'CHANGE_SIDE', false, (buffer, info, client, server, datas)->
   return unless room
   if client.pos == 0
     room.duel_stage = ygopro.constants.DUEL_STAGE.SIDING
+    if room.has_ygopro_error
+       botServer.uploadreplay(room)
+    else
+      try
+        fs.unlinkSync("./ygopro/replay/"+room.game_id+".yrp")
+        fs.unlinkSync("./ygopro/replay/"+room.game_id+".yrpX")
+      catch error
+    room.has_ygopro_error=false
   client.selected_preduel = false
   if settings.modules.side_timeout
     client.side_tcount = settings.modules.side_timeout
