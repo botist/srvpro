@@ -124,7 +124,7 @@ var fs = require('fs');
 		if (room){
 			write("Room id: "+room.game_id + "\nRoom Password: "+room.pass+"\nRoom Notes: "+room.notes+"\nHost Player: "+room.players[0].name+"\nRoom Status: "+room.status)
 		}
-		
+
 		ref = (require('underscore')).lines(output);
 		for (j = 0, len1 = ref.length; j < len1; j++) {
 			if ((line + "\n" + ref[j]).length > 2000-6){
@@ -136,27 +136,26 @@ var fs = require('fs');
 		write(line);
 	};
 
-	function uploadreplay(room){
-		let j, len1, line, ref;
-		if (!room){
-			return
+	function uploadreplay(room) {
+		if (!room) {
+			return;
 		}
-		let roomdesc = "```Room had an error``````Room id: "+room.game_id+"\nRoom Notes: "+room.notes+"\nHost Player: "+room.players[0].name+"```"
-		let uploads = [];
-		for (let i = 0; i < channels.length; i++) {
-			// .send returns a promise
-			uploads.push(bot.channels.get(channels[i]).send(roomdesc, {
-												files: [
-													"./ygopro/replay/"+room.game_id+".yrp",
-													"./ygopro/replay/"+room.game_id+".yrpX"
-												  ]
-												}));
-		}
-		Promise.all(uploads).then(() => {
-			fs.unlinkSync("./ygopro/replay/"+room.game_id+".yrp");
-			fs.unlinkSync("./ygopro/replay/"+room.game_id+".yrpX")
-		})
-	};
+		const botChannels = channels.map(channel => bot.channels.get(channel));
+		const roomdesc = "```Room had an error``````Room id: " + room.game_id + "\nRoom Notes: " + room.notes + "\nHost Player: " + room.players[0].name + "```";
+		Promise.all(
+			botChannels.map(channel => channel.send(roomdesc, {
+				files: [
+					"./ygopro/replay/" + room.game_id + ".yrp",
+					"./ygopro/replay/" + room.game_id + ".yrpX"
+				]
+			}))
+		).then(() => {
+			fs.unlinkSync("./ygopro/replay/" + room.game_id + ".yrp");
+			fs.unlinkSync("./ygopro/replay/" + room.game_id + ".yrpX");
+		}).catch(error => Promise.all(
+			botChannels.map(channel => channel.send(`Failed to upload replays for room ${room.game_id}!\n${error.message}`))
+		)).catch(console.error);
+	}
 
 	function savechannels(){
 		let buffer = "";
