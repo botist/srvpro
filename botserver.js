@@ -142,7 +142,7 @@ var fs = require('fs');
 		}
 		const botChannels = channels.map(channel => bot.channels.get(channel));
 		const messageHeader = code !== undefined && signal !== undefined
-			? `Process ${room.process_pid} exited with code ${code} and signal ${signal}\n` + ```Room had an error```
+			? `Process ${room.process_pid} exited with code ${code} and signal ${signal}\n` + "```Room had an error```"
 			: "```Room had an error```";
 		const message = messageHeader +
 			"```Room id: " + room.game_id +
