@@ -1203,6 +1203,7 @@ class Room
       try
         fs.unlinkSync("./ygopro/replay/"+@game_id+".yrp")
         fs.unlinkSync("./ygopro/replay/"+@game_id+".yrpX")
+        fs.unlinkSync("./ygopro/replay/"+@game_id+".answ")
       catch error
     # @watcher_buffers = []
     # @recorder_buffers = []
@@ -2803,6 +2804,7 @@ ygopro.stoc_follow 'REMATCH', false, (buffer, info, client, server, datas)->
     try
       fs.unlinkSync("./ygopro/replay/"+room.game_id+".yrp")
       fs.unlinkSync("./ygopro/replay/"+room.game_id+".yrpX")
+      fs.unlinkSync("./ygopro/replay/"+room.game_id+".answ")
     catch error
   room.has_ygopro_error=false
   return
@@ -2941,6 +2943,7 @@ ygopro.stoc_follow 'CHANGE_SIDE', false, (buffer, info, client, server, datas)->
       try
         fs.unlinkSync("./ygopro/replay/"+room.game_id+".yrp")
         fs.unlinkSync("./ygopro/replay/"+room.game_id+".yrpX")
+        fs.unlinkSync("./ygopro/replay/"+room.game_id+".answ")
       catch error
     room.has_ygopro_error=false
   client.selected_preduel = false

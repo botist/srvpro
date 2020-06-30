@@ -1624,6 +1624,7 @@
         try {
           fs.unlinkSync("./ygopro/replay/" + this.game_id + ".yrp");
           fs.unlinkSync("./ygopro/replay/" + this.game_id + ".yrpX");
+          fs.unlinkSync("./ygopro/replay/" + this.game_id + ".answ");
         } catch (error1) {
           error = error1;
         }
@@ -3512,6 +3513,7 @@
       try {
         fs.unlinkSync("./ygopro/replay/" + room.game_id + ".yrp");
         fs.unlinkSync("./ygopro/replay/" + room.game_id + ".yrpX");
+        fs.unlinkSync("./ygopro/replay/" + room.game_id + ".answ");
       } catch (error1) {
         error = error1;
       }
@@ -3684,6 +3686,7 @@
         try {
           fs.unlinkSync("./ygopro/replay/" + room.game_id + ".yrp");
           fs.unlinkSync("./ygopro/replay/" + room.game_id + ".yrpX");
+          fs.unlinkSync("./ygopro/replay/" + room.game_id + ".answ");
         } catch (error1) {
           error = error1;
         }
