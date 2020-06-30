@@ -136,32 +136,48 @@ var fs = require('fs');
 		write(line);
 	};
 
-	function uploadreplay(room, code, signal) {
-		if (!room) {
+	async function uploadreplay(room, code, signal) {
+		if (!room || signal === "SIGPIPE") {
 			return;
 		}
 		const botChannels = channels.map(channel => bot.channels.get(channel));
 		const messageHeader = code !== undefined && signal !== undefined
-			? `Process ${room.process_pid} exited with code ${code} and signal ${signal}\n` + "```Room had an error```"
+			? "```Room had an error```" + `Process ${room.process_pid} exited with code ${code} and signal ${signal}\n`
 			: "```Room had an error```";
 		const message = messageHeader +
 			"```Room id: " + room.game_id +
 			"\nRoom Notes: " + room.notes +
 			"\nHost Player: " + room.players[0].name + "```";
-
-		Promise.all(
-			botChannels.map(channel => channel.send(message, {
-				files: [
-					"./ygopro/replay/" + room.game_id + ".yrp",
-					"./ygopro/replay/" + room.game_id + ".yrpX"
-				]
-			}))
-		).then(() => {
-			fs.unlinkSync("./ygopro/replay/" + room.game_id + ".yrp");
-			fs.unlinkSync("./ygopro/replay/" + room.game_id + ".yrpX");
-		}).catch(error => Promise.all(
-			botChannels.map(channel => channel.send(`Failed to upload replays for room ${room.game_id}!\n${error.message}`))
-		)).catch(console.error);
+		let messageSuffix = "";
+		if (code !== undefined && signal !== undefined) {
+			try {
+				const lastAnswer = await fs.promises.readFile(`./ygopro/replay/${room.game_id}.answ`);
+				await fs.promises.appendFile(`./ygopro/replay/${room.game_id}.yrp`, lastAnswer);
+				messageSuffix = "\nFinal `.answ` was appended.";
+			} catch (e) {
+				messageSuffix = "\nNo `.answ` was appended.";
+			}
+		}
+		try {
+			await Promise.all(
+				botChannels.map(channel => channel.send(message + messageSuffix, {
+					files: [
+						`./ygopro/replay/${room.game_id}.yrp`,
+						`./ygopro/replay/${room.game_id}.yrpX`
+					]
+				}))
+			);
+		} catch (e) {
+			try {
+				await Promise.all(botChannels.map(channel => channel.send(message + "\nNo replay available.")));
+			} catch (err) {
+				console.error(err);
+			}
+		}
+		// Don't really care if these fail since they might not exist.
+		fs.promises.unlink(`./ygopro/replay/${room.game_id}.yrp`).catch(() => { });
+		fs.promises.unlink(`./ygopro/replay/${room.game_id}.yrpX`).catch(() => { });
+		fs.promises.unlink(`./ygopro/replay/${room.game_id}.answ`).catch(() => { });
 	}
 
 	function savechannels(){
