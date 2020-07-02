@@ -168,11 +168,7 @@ async function uploadreplay(room, code, signal) {
 			}))
 		);
 	} catch (e) {
-		try {
-			await Promise.all(botChannels.map(channel => channel.send(message + "\nNo replay available.")));
-		} catch (err) {
-			console.error(err);
-		}
+		console.error(`No replay available for room ${room.game_id}, was process ${room.process_pid}.`);
 	}
 	// Don't really care if these fail since they might not exist.
 	fs.promises.unlink(`./ygopro/replay/${room.game_id}.yrp`).catch(() => { });
