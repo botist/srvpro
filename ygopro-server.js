@@ -2417,8 +2417,9 @@
   ygopro.ctos_follow('CREATE_GAME', false, function(buffer, info, client, server, datas) {
     var name, room;
     info.pass = info.pass.trim();
+    client.name = client.name ? client.name.trim() : "";
     client.pass = info.pass;
-    if (!client.name || client.name === "") {
+    if (client.name === "") {
       ygopro.stoc_die(client, "${bad_user_name}");
     } else if (info.info.version !== settings.version) {
       ygopro.stoc_send(client, 'ERROR_MSG', {
@@ -2497,8 +2498,12 @@
     var name, room;
     //log.info info
     info.pass = info.pass.trim();
-    client.pass = info.pass;
-    if (!client.name || client.name === "") {
+    client.name = client.name ? client.name.trim() : "";
+    // if CLIENT_is_able_to_reconnect(client) or CLIENT_is_able_to_kick_reconnect(client)
+    // CLIENT_pre_reconnect(client)
+    // return
+    // else
+    if (client.name === "") {
       ygopro.stoc_die(client, "${bad_user_name}");
     } else if (info.version2 !== settings.version) {
       ygopro.stoc_send(client, 'ERROR_MSG', {

@@ -1799,9 +1799,10 @@ ygopro.ctos_follow 'PLAYER_INFO', true, (buffer, info, client, server, datas)->
 
 ygopro.ctos_follow 'CREATE_GAME', false, (buffer, info, client, server, datas)->
   info.pass=info.pass.trim()
+  client.name = if client.name then client.name.trim() else ""
   client.pass = info.pass
 
-  if !client.name or client.name==""
+  if client.name==""
     ygopro.stoc_die(client, "${bad_user_name}")
 
   else if info.info.version != settings.version
@@ -1881,12 +1882,12 @@ ygopro.ctos_follow 'CREATE_GAME', false, (buffer, info, client, server, datas)->
 ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server, datas)->
 #log.info info
   info.pass=info.pass.trim()
-  client.pass = info.pass
+  client.name = if client.name then client.name.trim() else ""
   # if CLIENT_is_able_to_reconnect(client) or CLIENT_is_able_to_kick_reconnect(client)
     # CLIENT_pre_reconnect(client)
     # return
   # else
-  if !client.name or client.name==""
+  if client.name==""
     ygopro.stoc_die(client, "${bad_user_name}")
 
   else if info.version2 != settings.version
